@@ -104,7 +104,7 @@ const Home: NextPage = () => {
         </h1>
       </header>
       <main className="flex w-full flex-1 flex-col items-center mt-16 md:px-20 text-center">
-        <div className="flex md:w-[60%] justify-around">
+        <div className="flex flex-col md:flex-row md:w-full xl:w-[60%] justify-around">
           <div>
             <div className="mb-8 flex min-h-[308px]">
               <Calendar
@@ -205,7 +205,7 @@ const Home: NextPage = () => {
             </form>
           </div>
           <ul className="text-left">
-            <h2 className="font-semibold text-gray-900 mb-6">
+            <h2 className="font-semibold mt-8 md:mt-0 text-gray-900 mb-6">
               Schedule for{' '}
               {format(selectedDate || startOfToday(), 'MMMM dd, yyy')}{' '}
             </h2>
