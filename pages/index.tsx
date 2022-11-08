@@ -104,11 +104,11 @@ const Home: NextPage = () => {
         </h1>
       </header>
       <main className="flex w-full flex-1 flex-col items-center mt-16 md:px-20 text-center">
-        <div className="flex flex-col md:flex-row md:w-full xl:w-[60%] justify-around">
+        <div className="flex flex-col md:flex-row md:w-full xl:w-[60%] justify-around mx-4">
           <div>
             <div className="mb-8 flex min-h-[308px]">
               <Calendar
-                className="border-1 border-gray-300 rounded-md"
+                className="border-1 border-gray-300 rounded-md w-full"
                 value={selectedDate}
                 onChange={setSelectedDate}
                 tileContent={({ date, view }) => {
@@ -204,7 +204,7 @@ const Home: NextPage = () => {
               </button>
             </form>
           </div>
-          <ul className="text-left">
+          <ul className="text-left w-[60%] md:ml-[5%]">
             <h2 className="font-semibold mt-8 md:mt-0 text-gray-900 mb-6">
               Schedule for{' '}
               {format(selectedDate || startOfToday(), 'MMMM dd, yyy')}{' '}
