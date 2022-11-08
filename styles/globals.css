@@ -9,5 +9,4 @@
 
 .react-calendar__tile--active {
     background-color: #006edc;
-    z-index: 1000;
 }

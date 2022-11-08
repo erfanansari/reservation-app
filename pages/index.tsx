@@ -38,6 +38,7 @@ const Home: NextPage = () => {
     const [name, setName] = useState('')
     const [duration, setDuration] = useState<Duration>('1 hour')
 
+    const [hover, setHover] = useState(false)
     const [reservations, setReservations] = useState<Reservations>({
         '2022-11-09': [
             {
@@ -139,14 +140,22 @@ const Home: NextPage = () => {
                                     const dateKey = format(date, 'yyyy-MM-dd')
                                     const reservationsForDate =
                                         reservations[dateKey]
-                                    if (
-                                        reservationsForDate?.length &&
+                                    const isNotActiveTile =
                                         selectedDate &&
                                         dateKey !==
                                             format(selectedDate, 'yyyy-MM-dd')
+                                    if (
+                                        reservationsForDate?.length &&
+                                        isNotActiveTile
                                     ) {
                                         return (
                                             <div
+                                                onMouseEnter={() =>
+                                                    setHover(true)
+                                                }
+                                                onMouseLeave={() =>
+                                                    setHover(false)
+                                                }
                                                 style={{
                                                     height: '100%',
                                                     width: '100%',
@@ -156,12 +165,25 @@ const Home: NextPage = () => {
                                                     display: 'flex',
                                                     justifyContent: 'center',
                                                     alignItems: 'center',
-                                                    backgroundColor: `rgba(0, 255, 0, ${
-                                                        reservationsForDate.length /
-                                                        10
-                                                    })`,
+                                                    backgroundColor: hover
+                                                        ? '#1087ff'
+                                                        : `rgba(0, 255, 0, ${
+                                                              reservationsForDate.length /
+                                                              10
+                                                          })`,
                                                 }}
-                                            />
+                                            >
+                                                <p
+                                                    className={`${
+                                                        hover
+                                                            ? 'block text-white'
+                                                            : 'hidden'
+                                                    } z-40`}
+                                                >
+                                                    {reservationsForDate.length}
+                                                    res
+                                                </p>
+                                            </div>
                                         )
                                     }
                                     // return <p>{format(date, 'dd')}</p>
