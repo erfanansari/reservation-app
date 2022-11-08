@@ -11,33 +11,110 @@ import {
     subMonths,
 } from 'date-fns'
 
+type Duration =
+    | '1 hour'
+    | '2 hours'
+    | '3 hours'
+    | '4 hours'
+    | '5 hours'
+    | '6 hours'
+    | '7 hours'
+    | '8 hours'
+    | 'next workday'
+
+// type Reservations = Record<string, { name: string; duration: string }[]>
+type Reservations = Record<string, { name: string; duration: Duration }[]>
+
+function isDuration(duration: string): duration is Duration {
+    return [
+        '1 hour',
+        '2 hours',
+        '3 hours',
+        '4 hours',
+        '5 hours',
+        '6 hours',
+        '7 hours',
+        '8 hours',
+        'next workday',
+    ].includes(duration)
+}
+
 const Home: NextPage = () => {
+    const currentTime = new Date()
     const [date, setDate] = useState<null | Date>(null)
-    // const [date, setDate] = useState(new Date())
     const [name, setName] = useState('')
-    const [duration, setDuration] = useState('1')
-    const workingHours = ['09', '10', '11', '12', '13', '14', '15', '16', '17']
+    const [duration, setDuration] = useState<Duration>('1 hour')
+
+    const [reservations, setReservations] = useState<Reservations>({
+        '2022-11-09': [
+            {
+                name: 'John Doe',
+                duration: '1 hour',
+            },
+            {
+                name: 'Jane Doe',
+                duration: '2 hours',
+            },
+        ],
+    })
+    // const [workingHours, setWorkingHours] = useState([
+    //     { start: '09:00', end: '17:00' },
+    // ])
+    const workingHours = [
+        '09:00',
+        '10:00',
+        '11:00',
+        '12:00',
+        '13:00',
+        '14:00',
+        '15:00',
+        '16:00',
+        '17:00',
+    ]
+
+    const hoursLeftUntilWorkdayEnds = () => {
+        const now = new Date()
+        const today = format(now, 'yyyy-MM-dd')
+        const todayEnd = new Date(
+            `${today}T${workingHours[workingHours.length - 1]}:00`,
+        )
+        // return formatDistance(now, todayEnd).replace('about ', '')
+        const result = new Date(todayEnd).getTime() - new Date(now).getTime()
+        const hours = Math.floor(result / 1000 / 60 / 60)
+        const minutes = Math.floor((result / 1000 / 60 / 60 - hours) * 60)
+        // return `${hours} hours and ${minutes} minutes`
+        return [hours, minutes]
+    }
+
+    console.log('hours left: ', hoursLeftUntilWorkdayEnds())
 
     const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         console.log({ name, duration })
-        alert(`${name} ${duration}`)
+        if (date) {
+            const dateKey = format(date, 'yyyy-MM-dd')
+            const reservation = { name, duration }
+            setReservations((prev) => ({
+                ...prev,
+                [dateKey]: [...(prev[dateKey] || []), reservation],
+            }))
+        }
     }
 
     const inputDisabled = !date
-
-    const currentTime = new Date()
-
+    const formattedDate = date ? format(date, 'yyyy-MM-dd') : ''
     // console.log(date)
     if (date) {
         // console.log(format(date, 'yyyy-MM-dd'))
         console.log('HH:mm', format(currentTime, 'HH:mm'))
+        console.log('HH', format(currentTime, 'HH'))
 
         console.log('date', date)
-        console.log(
-            'subHours',
-            format(subHours(currentTime, -workingHours[0]), 'HH:mm'),
-        )
+        console.log('formattedDate', formattedDate)
+        // console.log(
+        //     'subHours',
+        //     format(subHours(currentTime, -workingHours[0]), 'HH:mm'),
+        // )
         console.log(formatDistance(date, new Date()))
     }
 
@@ -84,14 +161,27 @@ const Home: NextPage = () => {
                       bg-white h-11 px-4 pr-16 rounded-lg text-md focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={inputDisabled}
                         value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
+                        onChange={(e) => {
+                            if (isDuration(e.target.value)) {
+                                setDuration(e.target.value)
+                            }
+                        }}
                         placeholder="Enter duration"
                     >
-                        {workingHours.map((hour) => (
-                            <option key={hour} value={hour}>
-                                {hour}
-                            </option>
-                        ))}
+                        {new Array(hoursLeftUntilWorkdayEnds()[0])
+                            .fill(0)
+                            .map((_, i) => {
+                                const hours = i + 1
+                                const text = `${hours} hour${
+                                    hours > 1 ? 's' : ''
+                                }`
+                                return (
+                                    <option key={hours} value={text}>
+                                        {text}
+                                    </option>
+                                )
+                            })}
+                        <option value="next workday">next workday</option>
                     </select>
                     <button
                         disabled={!name || !duration}
@@ -100,11 +190,16 @@ const Home: NextPage = () => {
                         Reserve
                     </button>
                 </form>
-                <ul>
-                    <li>
-                        date: {date && format(new Date(), 'yyyy-MM-dd HH:mm')}
-                    </li>
-                    <li>name: Reza</li>
+                <ul className="mt-4 flex flex-col items-center">
+                    {reservations[formattedDate]?.map((reservation) => (
+                        <li key={reservation.name}>
+                            <span className="mr-4">
+                                {' '}
+                                name: {reservation.name}
+                            </span>
+                            <span> duration: {reservation.duration}</span>
+                        </li>
+                    ))}
                 </ul>
             </main>
 
