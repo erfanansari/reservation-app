@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+.react-calendar__tile {
+    /* background-color: red; */
+    position: relative;
+}
+
 .react-calendar__tile--active {
     background-color: #006edc;
+    z-index: 1000;
 }

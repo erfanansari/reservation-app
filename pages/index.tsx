@@ -2,14 +2,7 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import { useState } from 'react'
 import Calendar from 'react-calendar'
-import {
-    compareAsc,
-    format,
-    formatDistance,
-    subDays,
-    subHours,
-    subMonths,
-} from 'date-fns'
+import { format, formatDistance } from 'date-fns'
 
 type Duration =
     | '1 hour'
@@ -41,7 +34,7 @@ function isDuration(duration: string): duration is Duration {
 
 const Home: NextPage = () => {
     const currentTime = new Date()
-    const [date, setDate] = useState<null | Date>(null)
+    const [selectedDate, setSelectedDate] = useState<null | Date>(null)
     const [name, setName] = useState('')
     const [duration, setDuration] = useState<Duration>('1 hour')
 
@@ -91,9 +84,11 @@ const Home: NextPage = () => {
     const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         console.log({ name, duration })
-        if (date) {
-            const dateKey = format(date, 'yyyy-MM-dd')
+        if (selectedDate) {
+            const dateKey = format(selectedDate, 'yyyy-MM-dd')
             const reservation = { name, duration }
+            if (reservations[dateKey]?.find((r) => r.name === reservation.name))
+                return
             setReservations((prev) => ({
                 ...prev,
                 [dateKey]: [...(prev[dateKey] || []), reservation],
@@ -101,21 +96,21 @@ const Home: NextPage = () => {
         }
     }
 
-    const inputDisabled = !date
-    const formattedDate = date ? format(date, 'yyyy-MM-dd') : ''
+    const inputDisabled = !selectedDate
+    const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''
     // console.log(date)
-    if (date) {
+    if (selectedDate) {
         // console.log(format(date, 'yyyy-MM-dd'))
         console.log('HH:mm', format(currentTime, 'HH:mm'))
         console.log('HH', format(currentTime, 'HH'))
 
-        console.log('date', date)
+        console.log('date', selectedDate)
         console.log('formattedDate', formattedDate)
         // console.log(
         //     'subHours',
         //     format(subHours(currentTime, -workingHours[0]), 'HH:mm'),
         // )
-        console.log(formatDistance(date, new Date()))
+        console.log(formatDistance(selectedDate, new Date()))
     }
 
     return (
@@ -135,14 +130,59 @@ const Home: NextPage = () => {
                     <div className="mx-auto mb-8 flex min-h-[308px]">
                         <Calendar
                             className="border-1 border-gray-300 rounded-md"
-                            value={date}
-                            onChange={setDate}
-                            tileDisabled={({ date }) =>
-                                date.getDay() === 0 ||
-                                date.getDay() === 6 ||
-                                date.getTime() <
+                            value={selectedDate}
+                            onChange={setSelectedDate}
+                            // formatDay={(_, date) => format(date, 'dd')}
+                            // formatDay={(_, date) => null}
+                            tileContent={({ date, view, activeStartDate }) => {
+                                if (view === 'month') {
+                                    const dateKey = format(date, 'yyyy-MM-dd')
+                                    const reservationsForDate =
+                                        reservations[dateKey]
+                                    if (
+                                        reservationsForDate?.length &&
+                                        selectedDate &&
+                                        dateKey !==
+                                            format(selectedDate, 'yyyy-MM-dd')
+                                    ) {
+                                        return (
+                                            <div
+                                                style={{
+                                                    height: '100%',
+                                                    width: '100%',
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    backgroundColor: `rgba(0, 255, 0, ${
+                                                        reservationsForDate.length /
+                                                        10
+                                                    })`,
+                                                }}
+                                            />
+                                        )
+                                    }
+                                    // return <p>{format(date, 'dd')}</p>
+                                }
+                                return null
+                            }}
+                            tileDisabled={({ date }) => {
+                                const isNotWorkday =
+                                    format(date, 'iiii') === 'Sunday' ||
+                                    format(date, 'iiii') === 'Saturday'
+
+                                const isPast =
+                                    date.getTime() <
                                     new Date().getTime() - 1000 * 60 * 60 * 24
-                            }
+
+                                const isTodayReserver = !!reservations[
+                                    format(date, 'yyyy-MM-dd')
+                                ]?.some((r) => r.duration === 'next workday')
+
+                                return isNotWorkday || isTodayReserver || isPast
+                            }}
                         />
                     </div>
                     <input
@@ -190,21 +230,16 @@ const Home: NextPage = () => {
                         Reserve
                     </button>
                 </form>
-                <ul className="mt-4 flex flex-col items-center">
+                <ul className="mt-4 text-left">
                     {reservations[formattedDate]?.map((reservation) => (
                         <li key={reservation.name}>
-                            <span className="mr-4">
-                                {' '}
-                                name: {reservation.name}
+                            <span className="mr-4 text-blue-600 font-bold">
+                                {`${reservation.name} - ${reservation.duration}`}
                             </span>
-                            <span> duration: {reservation.duration}</span>
                         </li>
                     ))}
                 </ul>
             </main>
-
-            {/* <footer className="flex h-24 w-full items-center justify-center border-t">
-      </footer> */}
         </div>
     )
 }
