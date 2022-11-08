@@ -1,86 +1,117 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import Image from 'next/image'
+import { useState } from 'react'
+import Calendar from 'react-calendar'
+import {
+    compareAsc,
+    format,
+    formatDistance,
+    subDays,
+    subHours,
+    subMonths,
+} from 'date-fns'
 
 const Home: NextPage = () => {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-2">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    const [date, setDate] = useState<null | Date>(null)
+    // const [date, setDate] = useState(new Date())
+    const [name, setName] = useState('')
+    const [duration, setDuration] = useState('1')
+    const workingHours = ['09', '10', '11', '12', '13', '14', '15', '16', '17']
 
-      <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
+    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        console.log({ name, duration })
+        alert(`${name} ${duration}`)
+    }
 
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
+    const inputDisabled = !date
 
-        <div className="mt-6 flex max-w-4xl flex-wrap items-center justify-around sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and its API.
-            </p>
-          </a>
+    const currentTime = new Date()
 
-          <a
-            href="https://nextjs.org/learn"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
+    // console.log(date)
+    if (date) {
+        // console.log(format(date, 'yyyy-MM-dd'))
+        console.log('HH:mm', format(currentTime, 'HH:mm'))
 
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
+        console.log('date', date)
+        console.log(
+            'subHours',
+            format(subHours(currentTime, -workingHours[0]), 'HH:mm'),
+        )
+        console.log(formatDistance(date, new Date()))
+    }
 
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+    return (
+        <div className="flex min-h-screen flex-col items-center justify-center py-2">
+            <Head>
+                <title>Create Next App</title>
+                <link rel="icon" href="/favicon.ico" />
+            </Head>
+            <header className="mt-14">
+                <h1 className="text-4xl lg:text-6xl font-bold">
+                    Welcome to the{' '}
+                    <p className="text-blue-600 sm:inline">Reservation App</p>
+                </h1>
+            </header>
+            <main className="flex w-full flex-1 flex-col items-center mt-16 md:px-20 text-center">
+                <form onSubmit={onSubmit} className="flex flex-col md:w-[50%]">
+                    <div className="mx-auto mb-8 flex min-h-[308px]">
+                        <Calendar
+                            className="border-1 border-gray-300 rounded-md"
+                            value={date}
+                            onChange={setDate}
+                            tileDisabled={({ date }) =>
+                                date.getDay() === 0 ||
+                                date.getDay() === 6 ||
+                                date.getTime() <
+                                    new Date().getTime() - 1000 * 60 * 60 * 24
+                            }
+                        />
+                    </div>
+                    <input
+                        type="text"
+                        className="border-2 border-gray-300 bg-white h-11 px-5 pr-16 rounded-lg text-md focus:outline-none
+                        disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={inputDisabled}
+                        placeholder="Enter your name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                    <select
+                        name="duration"
+                        id="duration"
+                        className="mt-6 border-2 border-gray-300
+                      bg-white h-11 px-4 pr-16 rounded-lg text-md focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={inputDisabled}
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value)}
+                        placeholder="Enter duration"
+                    >
+                        {workingHours.map((hour) => (
+                            <option key={hour} value={hour}>
+                                {hour}
+                            </option>
+                        ))}
+                    </select>
+                    <button
+                        disabled={!name || !duration}
+                        className="mt-4 bg-blue-500 transition-colors hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:hover:bg-blue-500 disabled:cursor-not-allowed"
+                    >
+                        Reserve
+                    </button>
+                </form>
+                <ul>
+                    <li>
+                        date: {date && format(new Date(), 'yyyy-MM-dd HH:mm')}
+                    </li>
+                    <li>name: Reza</li>
+                </ul>
+            </main>
+
+            {/* <footer className="flex h-24 w-full items-center justify-center border-t">
+      </footer> */}
         </div>
-      </main>
-
-      <footer className="flex h-24 w-full items-center justify-center border-t">
-        <a
-          className="flex items-center justify-center gap-2"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-        </a>
-      </footer>
-    </div>
-  )
+    )
 }
 
 export default Home
