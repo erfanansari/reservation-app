@@ -25,20 +25,11 @@ function isDuration(duration: string): duration is Duration {
   )
 }
 
-const now = new Date()
-const initialWorkHours = eachHourOfInterval({
-  start: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9),
-  end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17),
-})
-  .map((h) => format(h, 'HH:mm'))
-  .concat('next workday')
-
 const Home: NextPage = () => {
   const [selectedDate, setSelectedDate] = useState<null | Date>(null)
   const [name, setName] = useState('')
   const [duration, setDuration] = useState<Duration>('1')
   const [hover, setHover] = useState(false)
-  // const [reserveTimeFinished, setReserveTimeFinished] = useState(false)
   const [reservations, setReservations] = useState<Reservations>({
     '2022-11-09': [
       {
@@ -57,9 +48,9 @@ const Home: NextPage = () => {
       },
     ],
   })
-  const [workingHours, setWorkingHours] = useState(initialWorkHours)
   const [options, setOptions] = useState<Date[]>([])
 
+  const now = new Date()
   const isPassedWorkingHours = now.getHours() >= 17
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -83,38 +74,29 @@ const Home: NextPage = () => {
 
   const selectedDayReservations = reservations[formattedDate] || []
 
-  const submitDisabled =
-    !name ||
-    !duration ||
-    !!reservations[formattedDate]?.find((r) => r.name === name) ||
-    !!reservations[formattedDate]?.some((r) => r.duration === 'next workday') ||
-    reservations[formattedDate]?.reduce(
+  const isTodayReserved =
+    selectedDayReservations.reduce(
       (acc, cur) =>
         cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
       0,
     ) >= 8
 
-  const inputDisabled =
-    !!reservations[formattedDate]?.some((r) => r.duration === 'next workday') ||
-    reservations[formattedDate]?.reduce(
-      (acc, cur) =>
-        cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
-      0,
-    ) >= 8 ||
-    !selectedDate
+  const isTheSameUser = !!selectedDayReservations.find((r) => r.name === name)
+
+  const submitDisabled = !name || !duration || isTodayReserved || isTheSameUser
+
+  const inputDisabled = isTodayReserved || !selectedDate
 
   useEffect(() => {
     if (!selectedDate) return
 
-    const dateKey = format(selectedDate, 'yyyy-MM-dd')
-    const reservationsForDate = reservations[dateKey] || []
-    const alreadyReservedHours = reservationsForDate.reduce(
+    const hoursReserved = selectedDayReservations.reduce(
       (acc, cur) =>
         cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
       0,
     )
 
-    console.log('alreadyReservedHours', alreadyReservedHours)
+    console.log('hoursReserved', hoursReserved)
     // if (alreadyReservedHours >= 8) {
     //   setReserveTimeFinished(true)
     // }
@@ -122,13 +104,13 @@ const Home: NextPage = () => {
     setOptions(
       eachHourOfInterval({
         start: add(startOfDay(selectedDate), {
-          hours: 9 + alreadyReservedHours,
+          hours: 9 + hoursReserved,
         }),
         end: add(startOfDay(selectedDate), { hours: 17 }),
       }),
     )
     setDuration('1')
-  }, [selectedDate, reservations[formattedDate]])
+  }, [selectedDate, selectedDayReservations])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
@@ -151,42 +133,17 @@ const Home: NextPage = () => {
                 value={selectedDate}
                 onChange={(date: Date) => {
                   setSelectedDate(date)
-
-                  // const dateKey = format(date, 'yyyy-MM-dd')
-                  // const reservationsForDate = reservations[dateKey] || []
-                  // const alreadyReservedHours = reservationsForDate.reduce(
-                  //   (acc, cur) =>
-                  //     cur.duration === 'next workday'
-                  //       ? 8
-                  //       : acc + parseInt(cur.duration),
-                  //   0,
-                  // )
-
-                  // console.log('alreadyReservedHours', alreadyReservedHours)
-                  // if (alreadyReservedHours >= 8) {
-                  //   setReserveTimeFinished(true)
-                  // }
-
-                  // setOptions(
-                  //   eachHourOfInterval({
-                  //     start: add(startOfDay(date), {
-                  //       hours: 9 + alreadyReservedHours,
-                  //     }),
-                  //     end: add(startOfDay(date), { hours: 17 }),
-                  //   }),
-                  // )
-                  // setDuration('1')
                 }}
                 tileContent={({ date, view }) => {
                   if (view === 'month') {
                     const dateKey = format(date, 'yyyy-MM-dd')
                     const length = reservations[dateKey]?.length
                     const isTodayReserved =
-                      !!reservations[format(date, 'yyyy-MM-dd')]?.some(
-                        (r) => r.duration === 'next workday',
-                      ) ||
                       reservations[format(date, 'yyyy-MM-dd')]?.reduce(
-                        (acc, cur) => acc + parseInt(cur.duration),
+                        (acc, cur) =>
+                          cur.duration === 'next workday'
+                            ? 8
+                            : acc + parseInt(cur.duration),
                         0,
                       ) >= 8
 
@@ -228,11 +185,11 @@ const Home: NextPage = () => {
                       (isPassedWorkingHours ? 0 : 1000 * 60 * 60 * 24)
 
                   const isTodayReserved =
-                    !!reservations[format(date, 'yyyy-MM-dd')]?.some(
-                      (r) => r.duration === 'next workday',
-                    ) ||
                     reservations[format(date, 'yyyy-MM-dd')]?.reduce(
-                      (acc, cur) => acc + parseInt(cur.duration),
+                      (acc, cur) =>
+                        cur.duration === 'next workday'
+                          ? 8
+                          : acc + parseInt(cur.duration),
                       0,
                     ) >= 8
 
