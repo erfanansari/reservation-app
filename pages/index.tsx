@@ -33,7 +33,6 @@ const Home: NextPage = () => {
   const [name, setName] = useState('')
   const [duration, setDuration] = useState<Duration>('1')
   const [hover, setHover] = useState(false)
-  // const [reservations, setReservations] = useState<Reservations>({})
   const [reservations, setReservations] = useLocalStorageState<Reservations>(
     'reservations',
     {
