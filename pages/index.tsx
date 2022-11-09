@@ -17,7 +17,12 @@ import Image from 'next/image'
 
 type Duration = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'next workday'
 
-type Reservations = Record<string, { name: string; duration: Duration }[]>
+type Reservation = {
+  name: string
+  duration: Duration
+}
+
+type Reservations = Record<string, Reservation[]>
 
 function isDuration(duration: string): duration is Duration {
   return ['1', '2', '3', '4', '5', '6', '7', '8', 'next workday'].includes(
@@ -74,12 +79,14 @@ const Home: NextPage = () => {
 
   const selectedDayReservations = reservations[formattedDate] || []
 
-  const isTodayReserved =
-    selectedDayReservations.reduce(
+  const getHoursReserved = (arr: Reservation[]) =>
+    arr?.reduce(
       (acc, cur) =>
         cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
       0,
-    ) >= 8
+    )
+
+  const isTodayReserved = getHoursReserved(selectedDayReservations) >= 8
 
   const isTheSameUser = !!selectedDayReservations.find((r) => r.name === name)
 
@@ -90,11 +97,7 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (!selectedDate) return
 
-    const hoursReserved = selectedDayReservations.reduce(
-      (acc, cur) =>
-        cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
-      0,
-    )
+    const hoursReserved = getHoursReserved(selectedDayReservations)
 
     console.log('hoursReserved', hoursReserved)
     // if (alreadyReservedHours >= 8) {
@@ -110,7 +113,7 @@ const Home: NextPage = () => {
       }),
     )
     setDuration('1')
-  }, [selectedDate, selectedDayReservations])
+  }, [selectedDate, reservations])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
@@ -139,12 +142,8 @@ const Home: NextPage = () => {
                     const dateKey = format(date, 'yyyy-MM-dd')
                     const length = reservations[dateKey]?.length
                     const isTodayReserved =
-                      reservations[format(date, 'yyyy-MM-dd')]?.reduce(
-                        (acc, cur) =>
-                          cur.duration === 'next workday'
-                            ? 8
-                            : acc + parseInt(cur.duration),
-                        0,
+                      getHoursReserved(
+                        reservations[format(date, 'yyyy-MM-dd')],
                       ) >= 8
 
                     if (length) {
@@ -185,12 +184,8 @@ const Home: NextPage = () => {
                       (isPassedWorkingHours ? 0 : 1000 * 60 * 60 * 24)
 
                   const isTodayReserved =
-                    reservations[format(date, 'yyyy-MM-dd')]?.reduce(
-                      (acc, cur) =>
-                        cur.duration === 'next workday'
-                          ? 8
-                          : acc + parseInt(cur.duration),
-                      0,
+                    getHoursReserved(
+                      reservations[format(date, 'yyyy-MM-dd')],
                     ) >= 8
 
                   return isNotWorkday || isTodayReserved || isPast
