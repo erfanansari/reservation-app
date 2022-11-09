@@ -143,7 +143,7 @@ const Home: NextPage = () => {
         </h1>
       </header>
       <main className="flex w-full flex-1 flex-col items-center mt-16 md:px-20 text-center">
-        <div className="flex flex-col md:flex-row md:w-full xl:w-[60%] justify-around mx-4">
+        <div className="flex flex-col md:flex-row md:w-full xl:w-[60%] justify-around mx-8 sm:mx-6 md:mx-4">
           <div>
             <div className="mb-8 flex min-h-[308px]">
               <Calendar
@@ -202,7 +202,7 @@ const Home: NextPage = () => {
                               ? 'initial'
                               : `rgba(0, 255, 0, ${length / 10})`,
                           }}
-                          className="h-full w-full absolute top-0 left-0 flex items-center justify-center"
+                          className="h-full w-full absolute top-0 left-0 flex items-center justify-center transition"
                         >
                           <p
                             className={`${
@@ -290,7 +290,7 @@ const Home: NextPage = () => {
               </button>
             </form>
           </div>
-          <ul className="text-left w-[60%] md:ml-[5%]">
+          <ul className="text-left w-full md:w-[60%] md:ml-[5%]">
             <h2 className="font-semibold mt-8 md:mt-0 text-gray-900 mb-6">
               {selectedDate
                 ? `Schedule for ${format(selectedDate, 'MMMM dd, yyy')}`
