@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
 import {
   add,
@@ -25,14 +25,20 @@ function isDuration(duration: string): duration is Duration {
   )
 }
 
-const Home: NextPage = () => {
-  const now = new Date()
+const now = new Date()
+const initialWorkHours = eachHourOfInterval({
+  start: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9),
+  end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17),
+})
+  .map((h) => format(h, 'HH:mm'))
+  .concat('next workday')
 
+const Home: NextPage = () => {
   const [selectedDate, setSelectedDate] = useState<null | Date>(null)
   const [name, setName] = useState('')
   const [duration, setDuration] = useState<Duration>('1')
   const [hover, setHover] = useState(false)
-
+  // const [reserveTimeFinished, setReserveTimeFinished] = useState(false)
   const [reservations, setReservations] = useState<Reservations>({
     '2022-11-09': [
       {
@@ -44,19 +50,21 @@ const Home: NextPage = () => {
         duration: '2',
       },
     ],
+    '2022-11-24': [
+      {
+        name: 'John Doe',
+        duration: '7',
+      },
+    ],
   })
+  const [workingHours, setWorkingHours] = useState(initialWorkHours)
+  const [options, setOptions] = useState<Date[]>([])
 
-  let workingHours = eachHourOfInterval({
-    start: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9),
-    end: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17),
-  }).map((h) => format(h, 'HH:mm'))
-
-  const lastHour = workingHours[workingHours.length - 1]
-  const isPassedWorkingHours = now.getHours() >= parseInt(lastHour)
+  const isPassedWorkingHours = now.getHours() >= 17
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    console.log({ name, duration })
+
     if (selectedDate) {
       const dateKey = format(selectedDate, 'yyyy-MM-dd')
       const reservation = { name, duration }
@@ -71,25 +79,56 @@ const Home: NextPage = () => {
     }
   }
 
-  // start 9am and end 5pm
-
-  console.log('hours', workingHours)
-
-  const inputDisabled = !selectedDate
   const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''
-  console.log('selectedDate', selectedDate)
-  if (selectedDate) {
-    const submittedDurations = reservations[formattedDate]
-      ?.map((r) => r.duration)
-      .reduce((acc, cur) => acc + parseInt(cur), 0)
-    console.log(submittedDurations)
-    workingHours = workingHours.slice(submittedDurations)
-
-    const hoursLeft = formatDistance(now, selectedDate)
-    console.log(hoursLeft)
-  }
 
   const selectedDayReservations = reservations[formattedDate] || []
+
+  const submitDisabled =
+    !name ||
+    !duration ||
+    !!reservations[formattedDate]?.find((r) => r.name === name) ||
+    !!reservations[formattedDate]?.some((r) => r.duration === 'next workday') ||
+    reservations[formattedDate]?.reduce(
+      (acc, cur) =>
+        cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
+      0,
+    ) >= 8
+
+  const inputDisabled =
+    !!reservations[formattedDate]?.some((r) => r.duration === 'next workday') ||
+    reservations[formattedDate]?.reduce(
+      (acc, cur) =>
+        cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
+      0,
+    ) >= 8 ||
+    !selectedDate
+
+  useEffect(() => {
+    if (!selectedDate) return
+
+    const dateKey = format(selectedDate, 'yyyy-MM-dd')
+    const reservationsForDate = reservations[dateKey] || []
+    const alreadyReservedHours = reservationsForDate.reduce(
+      (acc, cur) =>
+        cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
+      0,
+    )
+
+    console.log('alreadyReservedHours', alreadyReservedHours)
+    // if (alreadyReservedHours >= 8) {
+    //   setReserveTimeFinished(true)
+    // }
+
+    setOptions(
+      eachHourOfInterval({
+        start: add(startOfDay(selectedDate), {
+          hours: 9 + alreadyReservedHours,
+        }),
+        end: add(startOfDay(selectedDate), { hours: 17 }),
+      }),
+    )
+    setDuration('1')
+  }, [selectedDate, reservations[formattedDate]])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
@@ -110,15 +149,46 @@ const Home: NextPage = () => {
               <Calendar
                 className="border-1 border-gray-300 rounded-md w-full"
                 value={selectedDate}
-                onChange={setSelectedDate}
+                onChange={(date: Date) => {
+                  setSelectedDate(date)
+
+                  // const dateKey = format(date, 'yyyy-MM-dd')
+                  // const reservationsForDate = reservations[dateKey] || []
+                  // const alreadyReservedHours = reservationsForDate.reduce(
+                  //   (acc, cur) =>
+                  //     cur.duration === 'next workday'
+                  //       ? 8
+                  //       : acc + parseInt(cur.duration),
+                  //   0,
+                  // )
+
+                  // console.log('alreadyReservedHours', alreadyReservedHours)
+                  // if (alreadyReservedHours >= 8) {
+                  //   setReserveTimeFinished(true)
+                  // }
+
+                  // setOptions(
+                  //   eachHourOfInterval({
+                  //     start: add(startOfDay(date), {
+                  //       hours: 9 + alreadyReservedHours,
+                  //     }),
+                  //     end: add(startOfDay(date), { hours: 17 }),
+                  //   }),
+                  // )
+                  // setDuration('1')
+                }}
                 tileContent={({ date, view }) => {
                   if (view === 'month') {
                     const dateKey = format(date, 'yyyy-MM-dd')
                     const length = reservations[dateKey]?.length
-                    // const disabled = isPassedWorkingHours && isToday(date)
-                    const isTodayReserved = !!reservations[
-                      format(date, 'yyyy-MM-dd')
-                    ]?.some((r) => r.duration === 'next workday')
+                    const isTodayReserved =
+                      !!reservations[format(date, 'yyyy-MM-dd')]?.some(
+                        (r) => r.duration === 'next workday',
+                      ) ||
+                      reservations[format(date, 'yyyy-MM-dd')]?.reduce(
+                        (acc, cur) => acc + parseInt(cur.duration),
+                        0,
+                      ) >= 8
 
                     if (length) {
                       return (
@@ -157,9 +227,14 @@ const Home: NextPage = () => {
                     new Date().getTime() -
                       (isPassedWorkingHours ? 0 : 1000 * 60 * 60 * 24)
 
-                  const isTodayReserved = !!reservations[
-                    format(date, 'yyyy-MM-dd')
-                  ]?.some((r) => r.duration === 'next workday')
+                  const isTodayReserved =
+                    !!reservations[format(date, 'yyyy-MM-dd')]?.some(
+                      (r) => r.duration === 'next workday',
+                    ) ||
+                    reservations[format(date, 'yyyy-MM-dd')]?.reduce(
+                      (acc, cur) => acc + parseInt(cur.duration),
+                      0,
+                    ) >= 8
 
                   return isNotWorkday || isTodayReserved || isPast
                 }}
@@ -189,15 +264,26 @@ const Home: NextPage = () => {
                 }}
                 placeholder="Enter duration"
               >
-                {workingHours.map((_, i) => (
-                  <option key={i} value={i + 1}>
-                    {i + 1} hour{i > 0 && 's'}
-                  </option>
-                ))}
+                {/* {workingHours.slice(1).map((el, i) => {
+                  return (
+                    <option key={i} value={el === 'next workday' ? el : i + 1}>
+                      {el === 'next workday'
+                        ? el
+                        : `${i + 1} hour${i > 0 ? 's' : ''}`}
+                    </option>
+                  )
+                })} */}
+                {options.slice(1).map((_, i) => {
+                  return (
+                    <option key={i} value={i + 1}>
+                      {i + 1} hour{i > 0 && 's'}
+                    </option>
+                  )
+                })}
                 <option value="next workday">next workday</option>
               </select>
               <button
-                disabled={!name || !duration}
+                disabled={submitDisabled}
                 className="mt-4 bg-blue-500 transition-colors hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:hover:bg-blue-500 disabled:cursor-not-allowed"
               >
                 Reserve
@@ -206,8 +292,9 @@ const Home: NextPage = () => {
           </div>
           <ul className="text-left w-[60%] md:ml-[5%]">
             <h2 className="font-semibold mt-8 md:mt-0 text-gray-900 mb-6">
-              Schedule for{' '}
-              {format(selectedDate || startOfToday(), 'MMMM dd, yyy')}{' '}
+              {selectedDate
+                ? `Schedule for ${format(selectedDate, 'MMMM dd, yyy')}`
+                : 'Select a date'}
             </h2>
             {selectedDayReservations.length > 0 ? (
               selectedDayReservations.map(({ name, duration }, i) => {
@@ -219,13 +306,13 @@ const Home: NextPage = () => {
                 return (
                   <li key={name} className="flex mb-4">
                     <Image
-                      width={45}
-                      height={45}
                       src={`https://randomuser.me/api/portraits/women/${
                         i + 10
                       }.jpg`}
                       alt="avatar"
-                      className="rounded-full mr-4"
+                      className="rounded-full mr-4 w-auto h-auto"
+                      width={45}
+                      height={45}
                     />
                     <div>
                       <p>{name}</p>
