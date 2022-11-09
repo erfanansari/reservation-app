@@ -3,7 +3,14 @@ import useLocalStorageState from 'use-local-storage-state'
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
-import { add, eachHourOfInterval, format, startOfDay } from 'date-fns'
+import {
+  add,
+  eachHourOfInterval,
+  format,
+  isToday,
+  startOfDay,
+  startOfToday,
+} from 'date-fns'
 import Image from 'next/image'
 
 type Duration = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'next workday'
@@ -26,6 +33,7 @@ const Home: NextPage = () => {
   const [name, setName] = useState('')
   const [duration, setDuration] = useState<Duration>('1')
   const [hover, setHover] = useState(false)
+  // const [reservations, setReservations] = useState<Reservations>({})
   const [reservations, setReservations] = useLocalStorageState<Reservations>(
     'reservations',
     {
@@ -76,12 +84,21 @@ const Home: NextPage = () => {
 
   const selectedDayReservations = reservations[formattedDate] || []
 
-  const getHoursReserved = (arr: Reservation[]) =>
-    arr?.reduce(
-      (acc, cur) =>
-        cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
-      0,
-    )
+  const getHoursReserved = (arr: Reservation[]) => {
+    const startOfWorkingDay = format(add(startOfToday(), { hours: 9 }), 'H')
+    const now = format(new Date(), 'H')
+
+    const hoursPassedFromStart = parseInt(now) - parseInt(startOfWorkingDay)
+
+    const result =
+      arr?.reduce(
+        (acc, cur) =>
+          cur.duration === 'next workday' ? 8 : acc + parseInt(cur.duration),
+        0,
+      ) + (selectedDate && isToday(selectedDate) ? hoursPassedFromStart : 0)
+
+    return result > 8 ? 8 : result
+  }
 
   const isTodayReserved = getHoursReserved(selectedDayReservations) >= 8
 
