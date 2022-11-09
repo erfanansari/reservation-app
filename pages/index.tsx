@@ -3,17 +3,7 @@ import useLocalStorageState from 'use-local-storage-state'
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
-import {
-  add,
-  eachHourOfInterval,
-  format,
-  formatDistance,
-  isEqual,
-  isToday,
-  startOfDay,
-  startOfToday,
-  sub,
-} from 'date-fns'
+import { add, eachHourOfInterval, format, startOfDay } from 'date-fns'
 import Image from 'next/image'
 
 type Duration = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | 'next workday'
@@ -39,24 +29,25 @@ const Home: NextPage = () => {
   const [reservations, setReservations] = useLocalStorageState<Reservations>(
     'reservations',
     {
-      defaultValue: {
-        '2022-11-09': [
-          {
-            name: 'John Doe',
-            duration: '1',
-          },
-          {
-            name: 'Jane Doe',
-            duration: '2',
-          },
-        ],
-        '2022-11-24': [
-          {
-            name: 'John Doe',
-            duration: '7',
-          },
-        ],
-      },
+      // defaultValue: {
+      //   '2022-11-09': [
+      //     {
+      //       name: 'John Doe',
+      //       duration: '1',
+      //     },
+      //     {
+      //       name: 'Jane Doe',
+      //       duration: '2',
+      //     },
+      //   ],
+      //   '2022-11-24': [
+      //     {
+      //       name: 'John Doe',
+      //       duration: '7',
+      //     },
+      //   ],
+      // },
+      defaultValue: {},
     },
   )
   const [options, setOptions] = useState<Date[]>([])
@@ -105,11 +96,6 @@ const Home: NextPage = () => {
 
     const hoursReserved = getHoursReserved(selectedDayReservations)
 
-    console.log('hoursReserved', hoursReserved)
-    // if (alreadyReservedHours >= 8) {
-    //   setReserveTimeFinished(true)
-    // }
-
     setOptions(
       eachHourOfInterval({
         start: add(startOfDay(selectedDate), {
@@ -124,7 +110,7 @@ const Home: NextPage = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
       <Head>
-        <title>Create Next App</title>
+        <title>Reservation App</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <header className="mt-14">
