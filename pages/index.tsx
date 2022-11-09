@@ -44,9 +44,6 @@ const Home: NextPage = () => {
 
   const now = new Date()
   const isPassedWorkingHours = now.getHours() >= 17
-  console.log('now.getHours()', now.getHours())
-
-  console.log('isPassedWorkingHours', isPassedWorkingHours)
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
