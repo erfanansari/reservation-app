@@ -1,4 +1,5 @@
 import type { NextPage } from 'next'
+import useLocalStorageState from 'use-local-storage-state'
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import Calendar from 'react-calendar'
@@ -35,24 +36,29 @@ const Home: NextPage = () => {
   const [name, setName] = useState('')
   const [duration, setDuration] = useState<Duration>('1')
   const [hover, setHover] = useState(false)
-  const [reservations, setReservations] = useState<Reservations>({
-    '2022-11-09': [
-      {
-        name: 'John Doe',
-        duration: '1',
+  const [reservations, setReservations] = useLocalStorageState<Reservations>(
+    'reservations',
+    {
+      defaultValue: {
+        '2022-11-09': [
+          {
+            name: 'John Doe',
+            duration: '1',
+          },
+          {
+            name: 'Jane Doe',
+            duration: '2',
+          },
+        ],
+        '2022-11-24': [
+          {
+            name: 'John Doe',
+            duration: '7',
+          },
+        ],
       },
-      {
-        name: 'Jane Doe',
-        duration: '2',
-      },
-    ],
-    '2022-11-24': [
-      {
-        name: 'John Doe',
-        duration: '7',
-      },
-    ],
-  })
+    },
+  )
   const [options, setOptions] = useState<Date[]>([])
 
   const now = new Date()
