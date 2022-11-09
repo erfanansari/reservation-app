@@ -37,24 +37,6 @@ const Home: NextPage = () => {
   const [reservations, setReservations] = useLocalStorageState<Reservations>(
     'reservations',
     {
-      // defaultValue: {
-      //   '2022-11-09': [
-      //     {
-      //       name: 'John Doe',
-      //       duration: '1',
-      //     },
-      //     {
-      //       name: 'Jane Doe',
-      //       duration: '2',
-      //     },
-      //   ],
-      //   '2022-11-24': [
-      //     {
-      //       name: 'John Doe',
-      //       duration: '7',
-      //     },
-      //   ],
-      // },
       defaultValue: {},
     },
   )
@@ -65,19 +47,15 @@ const Home: NextPage = () => {
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!selectedDate) return
 
-    if (selectedDate) {
-      const dateKey = format(selectedDate, 'yyyy-MM-dd')
-      const reservation = { name, duration }
+    const dateKey = format(selectedDate, 'yyyy-MM-dd')
+    const reservation = { name, duration }
 
-      if (reservations[dateKey]?.find((r) => r.name === reservation.name))
-        return
-
-      setReservations((prev) => ({
-        ...prev,
-        [dateKey]: [...(prev[dateKey] || []), reservation],
-      }))
-    }
+    setReservations((prev) => ({
+      ...prev,
+      [dateKey]: [...(prev[dateKey] || []), reservation],
+    }))
   }
 
   const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''
@@ -225,15 +203,6 @@ const Home: NextPage = () => {
                 }}
                 placeholder="Enter duration"
               >
-                {/* {workingHours.slice(1).map((el, i) => {
-                  return (
-                    <option key={i} value={el === 'next workday' ? el : i + 1}>
-                      {el === 'next workday'
-                        ? el
-                        : `${i + 1} hour${i > 0 ? 's' : ''}`}
-                    </option>
-                  )
-                })} */}
                 {options.slice(1).map((_, i) => {
                   return (
                     <option key={i} value={i + 1}>
